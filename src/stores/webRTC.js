@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import router from '../router'
 import { initializeApp } from 'firebase/app';
 import {  getFirestore,
           collection,
@@ -19,7 +20,7 @@ const firebaseConfig = {
   projectId: "monoestereotv",
   storageBucket: "monoestereotv.appspot.com",
   messagingSenderId: "574702885108",
-  appId: "1:574702885108:web:2c2bfa659cd064000f26a1"
+  appId: "1:574702885108:web:2c2bfa659cd064000f26a1",
 };
 
 const app = initializeApp(firebaseConfig);
@@ -46,11 +47,19 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       roomId: null,
       host: null,
       guest: null,
+      isScreenSharing: false,
+      isMicMuted: false,
+      isVideoOff: false,
+      isGuestActive: false,
+      callTimer: null,
+      roomInfo: null,
     }
   },
 
   getters: {
-
+    callStarted: (state) => {
+      return state.roomInfo?.offer?.createdAt;
+    }
   },
 
   actions: {
@@ -68,7 +77,6 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
     },
 
     async createRoom(id) {
-
       const roomRef = doc(collection(db, "rooms"), id);
 
       console.log("Create PeerConnection with configuration: ", configuration);
@@ -102,12 +110,13 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
         offer: {
           type: offer.type,
           sdp: offer.sdp,
+          createdAt: Date.now(),
         },
       };
       await setDoc(roomRef, roomWithOffer);
       this.roomId = roomRef.id;
       console.log(`New room created with SDP offer. Room ID: ${roomRef.id}`);
-      document.querySelector("#currentRoom").innerText = `Current room is ${roomRef.id} - You are the caller!`;
+      document.querySelector("#currentRoom").innerText = `Host`;
       // Code for creating a room above
 
       this.peerConnection.addEventListener("track", (event) => {
@@ -121,6 +130,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       // Listening for remote session description below
       onSnapshot(roomRef, async (snapshot) => {
         const data = snapshot.data();
+        this.roomInfo = data;
         if (!this.peerConnection.currentRemoteDescription && data && data.answer) {
           console.log("Got remote description: ", data.answer);
           const rtcSessionDescription = new RTCSessionDescription(data.answer);
@@ -136,10 +146,16 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
           if (change.type === "added") {
             let data = change.doc.data();
             console.log(`Got new remote ICE candidate: ${JSON.stringify(data)}`);
+            this.isGuestActive = true;
             await this.peerConnection.addIceCandidate(
               new RTCIceCandidate(data)
             );
           }
+
+          /* if (change.type === "removed") {
+            console.log("Remote ICE candidate removed:", change.doc.data());
+            this.isGuestActive = false;
+          } */
         });
       });
       // Listen for remote ICE candidates above
@@ -147,20 +163,19 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
     joinRoom() {
       document.querySelector('#confirmJoinBtn').
-          addEventListener('click', async () => {
-            this.roomId = document.querySelector('#room-id').value;
-            console.log('Join room: ', this.roomId);
-            document.querySelector(
-                '#currentRoom').innerText = `Current room is ${this.roomId} - You are the callee!`;
-            await this.joinRoomById(this.roomId);
-          }, {once: true});
+        addEventListener('click', async () => {
+          this.roomId = document.querySelector('#room-id').value;
+          console.log('Join room: ', this.roomId);
+          await this.joinRoomById(this.roomId);
+        }, {once: true});
+      },
 
-    },
-
-    async joinRoomById(roomId) {
-      const roomRef = doc(collection(db, "rooms"), roomId);
-      const roomSnapshot = await getDoc(roomRef);
-      console.log("Got room:", roomSnapshot.exists());
+      async joinRoomById(roomId) {
+        this.isGuestActive = true;
+        const roomRef = doc(collection(db, "rooms"), roomId);
+        const roomSnapshot = await getDoc(roomRef);
+        console.log("Got room:", roomSnapshot.exists());
+        document.querySelector('#currentRoom').innerText = `Guest`;
 
       if (roomSnapshot.exists()) {
         console.log("Create PeerConnection with configuration: ", configuration);
@@ -270,6 +285,8 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
           await deleteDoc(candidate.ref);
         });
         await deleteDoc(roomRef);
+
+        router.push({name: 'lobby'});
       }
 
     },
@@ -294,6 +311,52 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       });
     },
 
+    shareScreen() {
+      navigator.mediaDevices.getDisplayMedia({video: true})
+        .then(stream => {
+          const videoTrack = stream.getVideoTracks()[0];
+          videoTrack.onended = () => {
+            this.stopScreenShare();
+          };
+          const sender = this.peerConnection.getSenders().find(s => s.track.kind === videoTrack.kind);
+          sender.replaceTrack(videoTrack);
+          this.isScreenSharing = true;
 
+          videoTrack.addEventListener('ended', () => {
+            this.stopScreenShare();
+          });
+        })
+        .catch(err => {
+          console.log('Unable to get display media ' + err);
+        });
+    },
+
+    stopScreenShare() {
+      const videoTrack = this.localStream.getVideoTracks()[0];
+      const sender = this.peerConnection.getSenders().find(s => s.track.kind === videoTrack.kind);
+      sender.replaceTrack(videoTrack);
+      this.isScreenSharing = false;
+
+    },
+
+    muteMic() {
+      this.localStream.getAudioTracks()[0].enabled = false;
+      this.isMicMuted = true;
+    },
+
+    unMuteMic() {
+      this.localStream.getAudioTracks()[0].enabled = true;
+      this.isMicMuted = false;
+    },
+
+    videoOff() {
+      this.localStream.getVideoTracks()[0].enabled = false;
+      this.isVideoOff = true;
+    },
+
+    videoOn() {
+      this.localStream.getVideoTracks()[0].enabled = true;
+      this.isVideoOff = false;
+    }
   }
 })

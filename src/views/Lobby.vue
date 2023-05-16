@@ -1,13 +1,24 @@
 <template>
-  <main>
-    <form @submit.prevent="joinRoom()" class="flex flex-col justify-center items-center min-h-screen">
-      <h2 class="text-5xl mb-4">Room name</h2>
-      <input type="text" v-model="roomName" class="p-5 ring-1 ring-slate-900/10 rounded-lg dark:bg-slate-800 text-center text-3xl">
+  <main class="flex flex-col items-center justify-center min-h-screen">
+    <div class="flex justify-center flex-col align-center">
+      <span class="material-symbols-outlined logo">
+        airwave
+      </span>
+      <h2 class="text-3xl mb-10">waveTalk</h2>
+    </div>
+    <form @submit.prevent="joinRoom()" class="flex flex-col justify-center items-center  container mx-auto px-4">
+      <input type="text"
+        v-model="roomName"
+        placeholder="Room name"
+        class="p-5 ring-1 ring-slate-900/10 rounded-lg dark:bg-slate-800 text-center text-3xl w-full max-w-lg"
+      >
       <button v-if="roomName"
         type="submit"
-        class="mt-4 p-2 dark:bg-slate-800 text-sm leading-6 text-slate-400 rounded-md ring-1 ring-slate-900/10 shadow-sm py-1.5 pl-2 pr-3 hover:ring-slate-300 dark:bg-slate-800 dark:highlight-white/5 dark:hover:bg-slate-700"
+        class="flex items-center justify-center aspect-square mt-4 p-5 bg-green-600 dark:bg-green-600 leading-1 text-white rounded-full ring-1 ring-slate-900/10 shadow-sm  dark:bg-slate-800 dark:highlight-white/5 dark:hover:bg-green-700"
       >
-        join
+        <span class="material-symbols-outlined">
+          call
+        </span>
       </button>
     </form>
   </main>
@@ -28,5 +39,7 @@ const joinRoom = () => {
 </script>
 
 <style lang="scss" scoped>
-
+.logo {
+  font-size: 130px;
+}
 </style>
