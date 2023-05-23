@@ -12,7 +12,7 @@
         </div>
 
         <div>
-          {{ timer }}
+          {{ timer }} {{ webRTCStore.hostName }} {{ webRTCStore.guestName }}
         </div>
 
         <div>
@@ -21,8 +21,14 @@
       </div>
 
       <div id="videos" class="flex gap-10 mt-5 justify-center flex-wrap">
-        <video v-show="webRTCStore.isGuestActive" id="remoteVideo" class="video-stream rounded-[40px]" autoplay playsinline></video>
-        <video id="localVideo" class="video-stream rounded-[40px]" muted autoplay playsinline></video>
+        <div class="relative">
+          <video v-show="webRTCStore.isGuestActive" id="remoteVideo" class="video-stream rounded-[22px]" autoplay playsinline></video>
+          <div class="absolute bottom-0 m-2 py-2 px-4 rounded-full">{{ webRTCStore.guestName }}</div>
+        </div>
+        <div class="relative">
+          <video id="localVideo" class="video-stream rounded-[22px]" muted autoplay playsinline></video>
+          <input type="text" class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-amber-400 dark:text-black weight-bold" v-model="hostName">
+        </div>
       </div>
 
       <div class="my-5 flex gap-4 justify-center">
@@ -79,15 +85,25 @@
 import { useWebRtcStore } from '../stores/webRTC';
 import { ref, onMounted, onUnmounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import _ from 'lodash';
 
 const route = useRoute();
 const webRTCStore = useWebRtcStore();
 
 const id = ref(route.params.id)
 
+const hostName = ref(localStorage.getItem('localName') || '')
+
 const timer = ref('00:00:00')
 
-watch(() => webRTCStore.callStarted, (newVal) => {
+watch(hostName, (newVal) => {
+  var debounce_fun = _.debounce(function () {
+    debugger
+    console.log('Function debounced after 1000ms!');
+    localStorage.setItem('localName', newVal)
+  }, 10000);
+
+  debounce_fun();
 })
 
 const startTimer = () => {
@@ -144,4 +160,5 @@ onUnmounted(() => {
 .video-stream {
   max-width: 100%;
 }
+
 </style>

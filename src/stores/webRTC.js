@@ -1,30 +1,21 @@
 import { defineStore } from 'pinia'
 import router from '../router'
-import { initializeApp } from 'firebase/app';
-import {  getFirestore,
-          collection,
-          doc,
-          addDoc,
-          setDoc,
-          onSnapshot,
-          getDocs,
-          getDoc,
-          deleteDoc,
-          updateDoc,
-          query,
-        } from "firebase/firestore";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyA64A5h0yyysHAXcgAXleW0dmVr27HOCqo",
-  authDomain: "monoestereotv.firebaseapp.com",
-  projectId: "monoestereotv",
-  storageBucket: "monoestereotv.appspot.com",
-  messagingSenderId: "574702885108",
-  appId: "1:574702885108:web:2c2bfa659cd064000f26a1",
-};
+import db from '../firebase/init.js'
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import {
+        collection,
+        doc,
+        addDoc,
+        setDoc,
+        onSnapshot,
+        getDocs,
+        getDoc,
+        deleteDoc,
+        updateDoc,
+        query,
+} from "firebase/firestore";
+
 const configuration = {
   iceServers: [
     {
@@ -59,6 +50,14 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
   getters: {
     callStarted: (state) => {
       return state.roomInfo?.offer?.createdAt;
+    },
+
+    hostName: (state) => {
+      return state.roomInfo?.offer?.by;
+    },
+
+    guestName: (state) => {
+      return state.roomInfo?.answer?.by;
     }
   },
 
@@ -108,6 +107,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
       const roomWithOffer = {
         offer: {
+          by: localStorage.getItem('localName') || 'Host',
           type: offer.type,
           sdp: offer.sdp,
           createdAt: Date.now(),
@@ -161,21 +161,13 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       // Listen for remote ICE candidates above
     },
 
-    joinRoom() {
-      document.querySelector('#confirmJoinBtn').
-        addEventListener('click', async () => {
-          this.roomId = document.querySelector('#room-id').value;
-          console.log('Join room: ', this.roomId);
-          await this.joinRoomById(this.roomId);
-        }, {once: true});
-      },
 
-      async joinRoomById(roomId) {
-        this.isGuestActive = true;
-        const roomRef = doc(collection(db, "rooms"), roomId);
-        const roomSnapshot = await getDoc(roomRef);
-        console.log("Got room:", roomSnapshot.exists());
-        document.querySelector('#currentRoom').innerText = `Guest`;
+    async joinRoomById(roomId) {
+      this.isGuestActive = true;
+      const roomRef = doc(collection(db, "rooms"), roomId);
+      const roomSnapshot = await getDoc(roomRef);
+      console.log("Got room:", roomSnapshot.exists());
+      document.querySelector('#currentRoom').innerText = `Guest`;
 
       if (roomSnapshot.exists()) {
         console.log("Create PeerConnection with configuration: ", configuration);
@@ -220,6 +212,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
         const roomWithAnswer = {
           answer: {
+            by: localStorage.getItem('localName') || 'Guest',
             type: answer.type,
             sdp: answer.sdp,
           },
@@ -227,6 +220,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
         await updateDoc(roomRef, roomWithAnswer);
         // Code for creating SDP answer above
 
+        this.guestName = roomSnapshot.data().offer.hostName
         // Listening for remote ICE candidates below
         const callerCandidatesQuery = query(
           collection(roomRef, "callerCandidates")
@@ -293,21 +287,23 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
     registerPeerConnectionListeners() {
       this.peerConnection.addEventListener('icegatheringstatechange', () => {
-        console.log(
-            `ICE gathering state changed: ${this.peerConnection.iceGatheringState}`);
+        console.log(`ICE gathering state changed: ${this.peerConnection.iceGatheringState}`);
+
       });
 
       this.peerConnection.addEventListener('connectionstatechange', () => {
         console.log(`Connection state change: ${this.peerConnection.connectionState}`);
+
       });
 
       this.peerConnection.addEventListener('signalingstatechange', () => {
         console.log(`Signaling state change: ${this.peerConnection.signalingState}`);
+
       });
 
       this.peerConnection.addEventListener('iceconnectionstatechange ', () => {
-        console.log(
-            `ICE connection state change: ${this.peerConnection.iceConnectionState}`);
+        console.log(`ICE connection state change: ${this.peerConnection.iceConnectionState}`);
+
       });
     },
 
