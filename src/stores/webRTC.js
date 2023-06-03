@@ -168,8 +168,10 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       const roomSnapshot = await getDoc(roomRef);
       console.log("Got room:", roomSnapshot.exists());
       document.querySelector('#currentRoom').innerText = `Guest`;
-
       if (roomSnapshot.exists()) {
+        onSnapshot(roomRef, async (snapshot) => {
+          this.roomInfo = snapshot.data();
+        });
         console.log("Create PeerConnection with configuration: ", configuration);
         this.peerConnection = new RTCPeerConnection(configuration);
         this.registerPeerConnectionListeners();
@@ -220,7 +222,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
         await updateDoc(roomRef, roomWithAnswer);
         // Code for creating SDP answer above
 
-        this.guestName = roomSnapshot.data().offer.hostName
+
         // Listening for remote ICE candidates below
         const callerCandidatesQuery = query(
           collection(roomRef, "callerCandidates")
