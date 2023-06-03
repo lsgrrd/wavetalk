@@ -12,18 +12,17 @@
         </div>
 
         <div>
-          {{ timer }} {{ webRTCStore.hostName }} {{ webRTCStore.guestName }}
+          {{ timer }}
         </div>
 
         <div>
           <div id="currentRoom" class="rounded-full px-2 bg-slate-400 text-white font-bold dark:bg-slate-600"></div>
         </div>
       </div>
-
       <div id="videos" class="flex gap-10 mt-5 justify-center flex-wrap">
-        <div class="relative">
-          <video v-show="webRTCStore.isGuestActive" id="remoteVideo" class="video-stream rounded-[22px]" autoplay playsinline></video>
-          <div class="absolute bottom-0 m-2 py-2 px-4 rounded-full">{{ webRTCStore.guestName }}</div>
+        <div v-show="webRTCStore.isGuestActive" class="relative">
+          <video  id="remoteVideo" class="video-stream rounded-[22px]" autoplay playsinline></video>
+          <div class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-amber-400 dark:text-black weight-bold">{{ webRTCStore.guestName }}</div>
         </div>
         <div class="relative">
           <video id="localVideo" class="video-stream rounded-[22px]" muted autoplay playsinline></video>
@@ -149,6 +148,18 @@ onBeforeUnmount(() => {
 onUnmounted(() => {
   webRTCStore.hangUp(id.value)
 })
+
+window.addEventListener("beforeunload", function (e) {
+  webRTCStore.hangUp(id.value)
+});
+
+window.onbeforeunload = function (e) {
+  if (e.target.value == true) {
+    webRTCStore.hangUp(id.value)
+  } else {
+    webRTCStore.hangUp(id.value)
+  }
+};
 
 </script>
 
