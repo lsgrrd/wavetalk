@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '../views/Home.vue'
 import LobbyView from '../views/Lobby.vue'
 import RoomView from '../views/Room.vue'
 import AdminView from '../views/Admin.vue'
@@ -8,11 +9,16 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'home',
+      component: HomeView
+    },
+    {
+      path: '/lobby',
       name: 'lobby',
       component: LobbyView
     },
     {
-      path: '/admin',
+      path: '/waveadmin',
       name: 'admin',
       component: AdminView
     },
