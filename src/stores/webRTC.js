@@ -322,8 +322,10 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
           videoTrack.addEventListener('ended', () => {
             this.stopScreenShare();
-            this.isScreenSharing = false;
           });
+
+          const localVideo = document.querySelector('#localVideo');
+          localVideo.srcObject = stream;
         })
         .catch(err => {
           console.log('Unable to get display media ' + err);
@@ -331,11 +333,14 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
     },
 
     stopScreenShare() {
+      debugger
       const videoTrack = this.localStream.getVideoTracks()[0];
       const sender = this.peerConnection.getSenders().find(s => s.track.kind === videoTrack.kind);
       sender.replaceTrack(videoTrack);
       this.isScreenSharing = false;
 
+      const localVideo = document.querySelector('#localVideo');
+      localVideo.srcObject = this.localStream;
     },
 
     muteMic() {
