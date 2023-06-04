@@ -282,7 +282,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
         });
         await deleteDoc(roomRef);
 
-        router.push({name: 'lobby'});
+        router.push({name: 'home'});
       }
 
     },
@@ -322,6 +322,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
           videoTrack.addEventListener('ended', () => {
             this.stopScreenShare();
+            this.isScreenSharing = false;
           });
         })
         .catch(err => {
