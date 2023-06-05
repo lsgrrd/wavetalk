@@ -44,6 +44,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       isGuestActive: false,
       callTimer: null,
       roomInfo: null,
+      isHost: true,
     }
   },
 
@@ -117,6 +118,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       this.roomId = roomRef.id;
       console.log(`New room created with SDP offer. Room ID: ${roomRef.id}`);
       document.querySelector("#currentRoom").innerText = `Host`;
+      this.isHost = true;
       // Code for creating a room above
 
       this.peerConnection.addEventListener("track", (event) => {
@@ -168,6 +170,7 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
       const roomSnapshot = await getDoc(roomRef);
       console.log("Got room:", roomSnapshot.exists());
       document.querySelector('#currentRoom').innerText = `Guest`;
+      this.isHost = false;
       if (roomSnapshot.exists()) {
         onSnapshot(roomRef, async (snapshot) => {
           this.roomInfo = snapshot.data();
@@ -333,7 +336,6 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
     },
 
     stopScreenShare() {
-      debugger
       const videoTrack = this.localStream.getVideoTracks()[0];
       const sender = this.peerConnection.getSenders().find(s => s.track.kind === videoTrack.kind);
       sender.replaceTrack(videoTrack);
@@ -341,6 +343,14 @@ export const useWebRtcStore = defineStore('WebRtcStore', {
 
       const localVideo = document.querySelector('#localVideo');
       localVideo.srcObject = this.localStream;
+
+      // cancel all video screenshares
+      this.peerConnection.getSenders().forEach(sender => {
+        if (sender.track && sender.track.kind === 'video') {
+          sender.replaceTrack(this.localStream.getVideoTracks()[0]);
+        }
+      })
+
     },
 
     muteMic() {

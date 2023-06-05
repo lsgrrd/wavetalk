@@ -24,11 +24,11 @@
       <div id="videos" class="flex gap-10 mt-5 justify-center flex-wrap items-center">
         <div v-show="webRTCStore.isGuestActive" class="relative">
           <video  id="remoteVideo" class="video-stream rounded-[22px]" autoplay playsinline></video>
-          <div v-show="webRTCStore.guestName && webRTCStore.hostName" class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-sky-700 text-white font-black">{{ webRTCStore.guestName }}</div>
+          <div v-show="webRTCStore.guestName && webRTCStore.hostName" class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-sky-700 text-white font-black">{{ webRTCStore.isHost ? webRTCStore.guestName : webRTCStore.hostName }}</div>
         </div>
         <div class="relative flex items-end">
           <video id="localVideo" class="video-stream rounded-[22px]" muted autoplay playsinline></video>
-          <div class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-sky-700 text-white font-black">{{ webRTCStore.hostName }}</div>
+          <div class="absolute bottom-0 m-2 py-2 px-4 rounded-full bg-sky-700 text-white font-black">{{ webRTCStore.isHost ? webRTCStore.hostName : webRTCStore.guestName }}</div>
         </div>
       </div>
 
@@ -77,6 +77,10 @@
               call_end
             </span>
           </div>
+      </div>
+      <div>
+        <video id="screen-share" class="video-stream rounded-[22px]" muted autoplay playsinline></video>
+        {{ JSON.stringify(webRTCStore.streamInfo) }}
       </div>
     </div>
   </main>
